@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">黑眼</string>
+
+    <!-- Main screen -->
+    <string name="main_waiting_for_input">等待输入</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">系统设置</string>
+    <string name="settings_language_label">语言 / Language</string>
+    <string name="settings_lang_cn">中文</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_network_title">网络配置</string>
+    <string name="settings_network_wifi">Wi‑Fi 连接</string>
+    <string name="settings_network_bluetooth">蓝牙</string>
+    <string name="settings_network_4g">4G 流量套餐</string>
+    <string name="settings_digital_wallet">数字钱包</string>
+    <string name="settings_id_config">身份配置</string>
+</resources>
+

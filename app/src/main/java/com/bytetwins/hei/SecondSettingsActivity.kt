@@ -1,6 +1,8 @@
 package com.bytetwins.hei
 
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -20,22 +22,56 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bytetwins.hei.ui.theme.HeiTheme
+import java.util.Locale
+
+private const val PREFS_NAME = "app_settings"
+private const val KEY_LANGUAGE = "language" // "en" or "zh"
 
 class SecondSettingsActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        // 在创建 Activity 之前，根据保存的语言应用 Locale
+        val lang = newBase.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_LANGUAGE, "en") ?: "en"
+        val locale = if (lang == "zh") Locale.SIMPLIFIED_CHINESE else Locale.ENGLISH
+        val config = Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        val ctx = newBase.createConfigurationContext(config)
+        super.attachBaseContext(ctx)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             HeiTheme {
                 Surface(color = Color.Black) {
-                    SecondSettingsScreen(onClose = { finish() })
+                    SecondSettingsScreen(
+                        onClose = { finish() },
+                        onLanguageChange = { langCode ->
+                            // 保存语言
+                            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                                .edit()
+                                .putString(KEY_LANGUAGE, langCode)
+                                .apply()
+
+                            // 重启主入口以应用新语言到整个应用
+                            val intent = Intent(this, MainActivity::class.java).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                            finish()
+                        }
+                    )
                 }
             }
         }
@@ -43,8 +79,13 @@ class SecondSettingsActivity : ComponentActivity() {
 }
 
 @Composable
-fun SecondSettingsScreen(onClose: () -> Unit = {}) {
+fun SecondSettingsScreen(
+    onClose: () -> Unit = {},
+    onLanguageChange: (String) -> Unit = {}
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    val currentLang = prefs.getString(KEY_LANGUAGE, "en") ?: "en"
 
     Box(
         modifier = Modifier
@@ -69,7 +110,7 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                 Spacer(modifier = Modifier.width(6.dp))
 
                 Text(
-                    text = "SYSTEM SETTINGS",
+                    text = stringResource(id = R.string.settings_title),
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -92,7 +133,7 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                     .padding(10.dp)
             ) {
                 Text(
-                    text = "Language / 语言",
+                    text = stringResource(id = R.string.settings_language_label),
                     color = Color(0xFFCCCCCC),
                     fontSize = 10.sp
                 )
@@ -107,25 +148,46 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                         .padding(3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // CN 选项
+                    val isCnSelected = currentLang == "zh"
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .background(Color(0xFF1F2937), RoundedCornerShape(12.dp)),
+                            .background(
+                                color = if (isCnSelected) Color(0xFF1F2937) else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onLanguageChange("zh") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "CN", color = Color.White, fontSize = 10.sp)
+                        Text(
+                            text = stringResource(id = R.string.settings_lang_cn),
+                            color = if (isCnSelected) Color.White else Color(0xFF9CA3AF),
+                            fontSize = 10.sp
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(3.dp))
 
+                    // EN 选项
+                    val isEnSelected = currentLang != "zh"
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxHeight(),
+                            .fillMaxHeight()
+                            .background(
+                                color = if (isEnSelected) Color(0xFF1F2937) else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onLanguageChange("en") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "EN", color = Color(0xFF9CA3AF), fontSize = 10.sp)
+                        Text(
+                            text = stringResource(id = R.string.settings_lang_en),
+                            color = if (isEnSelected) Color.White else Color(0xFF9CA3AF),
+                            fontSize = 10.sp
+                        )
                     }
                 }
             }
@@ -141,7 +203,7 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                     .padding(10.dp)
             ) {
                 Text(
-                    text = "NETWORK CONFIG",
+                    text = stringResource(id = R.string.settings_network_title),
                     color = Color(0xFFCCCCCC),
                     fontSize = 10.sp
                 )
@@ -149,21 +211,21 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                 Spacer(modifier = Modifier.height(6.dp))
 
                 NetworkRowClickable(
-                    label = "Wi-Fi Link",
+                    label = stringResource(id = R.string.settings_network_wifi),
                     onClick = {
                         context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
                     }
                 )
 
                 NetworkRowClickable(
-                    label = "Bluetooth",
+                    label = stringResource(id = R.string.settings_network_bluetooth),
                     onClick = {
                         context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
                     }
                 )
 
                 NetworkRowClickable(
-                    label = "4G Data Plan",
+                    label = stringResource(id = R.string.settings_network_4g),
                     onClick = {
                         context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
                     }
@@ -180,7 +242,7 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 SettingsLargeButton(
-                    title = "Digital Wallet",
+                    title = stringResource(id = R.string.settings_digital_wallet),
                     modifier = Modifier.weight(1f),
                     leadingIcon = {
                         Icon(
@@ -192,7 +254,7 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                     }
                 )
                 SettingsLargeButton(
-                    title = "ID Config",
+                    title = stringResource(id = R.string.settings_id_config),
                     modifier = Modifier.weight(1f),
                     leadingIcon = {
                         Icon(
