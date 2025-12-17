@@ -16,3 +16,5 @@
 5.目前system setting中的元素过大，排列也不够紧凑。 要求是setting.png中的东西可以全部显示在1080x1280区域内，就是当前模拟器的配置分辨率下。 另外，wifi link,bluetooth,4G这三行， 直接变成点点击后调用系统设置，并可以从系统设置返回，不再需求滑动开关或下拉菜单
 
 6.好一些了，但ui依然不够紧凑，下面的digital wallet和id config依然没有显示。 另外，wifi这些选项的system字样没有必要，变成一行就好。 4g的设置你好像没有加入。
+
+setting中，Language那栏和network config还不够大。 另外，你再看下setting.png. digital wallet和id config也有外部框线。 并且所有框线内的background color都不够明显。灰度至少减去10%. 色相微微发青色。

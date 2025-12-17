@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import com.bytetwins.hei.R
@@ -70,7 +71,7 @@ fun EyesScreen(
             Text(
                 text = stringResource(id = R.string.main_waiting_for_input),
                 color = Color(0xFFB0C4DE),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 16.sp),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(0.7f)
             )

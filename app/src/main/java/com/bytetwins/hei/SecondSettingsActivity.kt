@@ -1,8 +1,6 @@
 package com.bytetwins.hei
 
-import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -22,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,43 +32,13 @@ import androidx.compose.ui.unit.sp
 import com.bytetwins.hei.ui.theme.HeiTheme
 import java.util.Locale
 
-private const val PREFS_NAME = "app_settings"
-private const val KEY_LANGUAGE = "language" // "en" or "zh"
-
 class SecondSettingsActivity : ComponentActivity() {
-    override fun attachBaseContext(newBase: Context) {
-        // 在创建 Activity 之前，根据保存的语言应用 Locale
-        val lang = newBase.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_LANGUAGE, "en") ?: "en"
-        val locale = if (lang == "zh") Locale.SIMPLIFIED_CHINESE else Locale.ENGLISH
-        val config = Configuration(newBase.resources.configuration)
-        config.setLocale(locale)
-        val ctx = newBase.createConfigurationContext(config)
-        super.attachBaseContext(ctx)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             HeiTheme {
                 Surface(color = Color.Black) {
-                    SecondSettingsScreen(
-                        onClose = { finish() },
-                        onLanguageChange = { langCode ->
-                            // 保存语言
-                            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                                .edit()
-                                .putString(KEY_LANGUAGE, langCode)
-                                .apply()
-
-                            // 重启主入口以应用新语言到整个应用
-                            val intent = Intent(this, MainActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(intent)
-                            finish()
-                        }
-                    )
+                    SecondSettingsScreen(onClose = { finish() })
                 }
             }
         }
@@ -79,35 +46,43 @@ class SecondSettingsActivity : ComponentActivity() {
 }
 
 @Composable
-fun SecondSettingsScreen(
-    onClose: () -> Unit = {},
-    onLanguageChange: (String) -> Unit = {}
-) {
+fun SecondSettingsScreen(onClose: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    val currentLang = prefs.getString(KEY_LANGUAGE, "en") ?: "en"
+    val currentLocale = context.resources.configuration.locales[0]
+    val languageLabel = remember(currentLocale) {
+        // 简单用语言代码展示，例如 "EN", "ZH"，也可以根据需要扩展
+        currentLocale.displayLanguage.uppercase(Locale.getDefault())
+    }
+
+    // 参考设计图：卡片内比背景稍微提亮、偏青灰
+    val cardBackground = Color(0xFF111C2B)      // 比之前更亮，明显区别于纯黑
+    val innerChipBackground = Color(0xFF1B2840) // chip 再亮一档，蓝青感更强
+    val buttonBackground = Color(0xFF131F32)    // 底部按钮略深于卡片，形成层次
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(Color(0xFF020712)) // 比纯黑略亮一点，接近参考图的深蓝底
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
         ) {
             // 顶部标题行
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // 绿色状态圆形：高度与标题行接近，看起来更粗更明显
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
+                        .height(18.dp)
+                        .width(6.dp)
                         .background(Color(0xFF1ED760), shape = RoundedCornerShape(50))
                 )
 
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = stringResource(id = R.string.settings_title),
@@ -122,93 +97,60 @@ fun SecondSettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Language / 语言 区块：加浅色底色矩形
-            Column(
+            // Language / 语言 区块：略微压缩高度，仍然比初版大
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF0B1220), RoundedCornerShape(12.dp))
-                    .border(1.dp, Color(0xFF3A4A5F), RoundedCornerShape(12.dp))
-                    .padding(10.dp)
+                    .background(cardBackground, RoundedCornerShape(18.dp))
+                    .border(1.dp, Color(0xFF313C4F), RoundedCornerShape(18.dp))
+                    .clickable {
+                        context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS))
+                    }
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = stringResource(id = R.string.settings_language_label),
-                    color = Color(0xFFCCCCCC),
-                    fontSize = 10.sp
+                    color = Color(0xFFE5E7EB),
+                    fontSize = 13.sp,
+                    modifier = Modifier.weight(1f)
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .height(28.dp)
-                        .background(Color(0xFF111827), RoundedCornerShape(16.dp))
-                        .padding(3.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(innerChipBackground, RoundedCornerShape(14.dp))
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // CN 选项
-                    val isCnSelected = currentLang == "zh"
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .background(
-                                color = if (isCnSelected) Color(0xFF1F2937) else Color.Transparent,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable { onLanguageChange("zh") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.settings_lang_cn),
-                            color = if (isCnSelected) Color.White else Color(0xFF9CA3AF),
-                            fontSize = 10.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(3.dp))
-
-                    // EN 选项
-                    val isEnSelected = currentLang != "zh"
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .background(
-                                color = if (isEnSelected) Color(0xFF1F2937) else Color.Transparent,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable { onLanguageChange("en") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.settings_lang_en),
-                            color = if (isEnSelected) Color.White else Color(0xFF9CA3AF),
-                            fontSize = 10.sp
-                        )
-                    }
+                    Text(
+                        text = languageLabel,
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Network Config 区块：同样加浅色底色矩形
+            // Network Config 卡片：使用同样提亮的卡片色
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF0B1220), RoundedCornerShape(12.dp))
-                    .border(1.dp, Color(0xFF3A4A5F), RoundedCornerShape(12.dp))
-                    .padding(10.dp)
+                    .background(cardBackground, RoundedCornerShape(18.dp))
+                    .border(1.dp, Color(0xFF313C4F), RoundedCornerShape(18.dp))
+                    .padding(horizontal = 18.dp, vertical = 14.dp)
             ) {
                 Text(
                     text = stringResource(id = R.string.settings_network_title),
-                    color = Color(0xFFCCCCCC),
-                    fontSize = 10.sp
+                    color = Color(0xFFE5E7EB),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 NetworkRowClickable(
                     label = stringResource(id = R.string.settings_network_wifi),
@@ -232,39 +174,57 @@ fun SecondSettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 底部按钮区域：按钮本身已有底色，这里只控制位置和间距
+            // 底部两个按钮外层卡片：同样的提亮卡片色
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SettingsLargeButton(
-                    title = stringResource(id = R.string.settings_digital_wallet),
-                    modifier = Modifier.weight(1f),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.AccountBalanceWallet,
-                            contentDescription = null,
-                            tint = Color(0xFF60A5FA),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                )
-                SettingsLargeButton(
-                    title = stringResource(id = R.string.settings_id_config),
-                    modifier = Modifier.weight(1f),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Badge,
-                            contentDescription = null,
-                            tint = Color(0xFF34D399),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(cardBackground, RoundedCornerShape(18.dp))
+                        .border(1.dp, Color(0xFF313C4F), RoundedCornerShape(18.dp))
+                        .padding(8.dp)
+                ) {
+                    SettingsLargeButton(
+                        title = stringResource(id = R.string.settings_digital_wallet),
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = Color(0xFF60A5FA),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        containerColor = buttonBackground
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(cardBackground, RoundedCornerShape(18.dp))
+                        .border(1.dp, Color(0xFF313C4F), RoundedCornerShape(18.dp))
+                        .padding(8.dp)
+                ) {
+                    SettingsLargeButton(
+                        title = stringResource(id = R.string.settings_id_config),
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Badge,
+                                contentDescription = null,
+                                tint = Color(0xFF34D399),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        containerColor = buttonBackground
+                    )
+                }
             }
         }
     }
@@ -276,20 +236,20 @@ private fun NetworkRowClickable(label: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 4.dp),
+            .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = label,
             color = Color.White,
-            fontSize = 12.sp,
+            fontSize = 14.sp,
             modifier = Modifier.weight(1f)
         )
 
         Text(
             text = ">",
             color = Color(0xFF9CA3AF),
-            fontSize = 13.sp
+            fontSize = 15.sp
         )
     }
 }
@@ -298,33 +258,36 @@ private fun NetworkRowClickable(label: String, onClick: () -> Unit) {
 private fun SettingsLargeButton(
     title: String,
     modifier: Modifier = Modifier,
-    leadingIcon: (@Composable () -> Unit)? = null
+    leadingIcon: (@Composable () -> Unit)? = null,
+    containerColor: Color = Color(0xFF131F32)
 ) {
     Button(
         onClick = { /* TODO: 功能稍后实现 */ },
         modifier = modifier
-            .height(56.dp),
+            .height(70.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF111827),
+            containerColor = containerColor,
             contentColor = Color.White
         ),
         shape = RoundedCornerShape(16.dp),
-        contentPadding = PaddingValues(6.dp)
+        contentPadding = PaddingValues(8.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             if (leadingIcon != null) {
-                leadingIcon()
-                Spacer(modifier = Modifier.width(8.dp))
+                Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                    leadingIcon()
+                }
+                Spacer(modifier = Modifier.height(6.dp))
             }
 
             Text(
                 text = title,
-                textAlign = TextAlign.Start,
-                fontSize = 12.sp,
-                modifier = Modifier.weight(1f)
+                textAlign = TextAlign.Center,
+                fontSize = 13.sp
             )
         }
     }
