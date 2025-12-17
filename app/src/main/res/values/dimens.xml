@@ -1,0 +1,10 @@
+<resources>
+    <!-- ...existing code... -->
+
+    <!-- 眼睛半径减半 / 间距加倍 / 瞳孔半径减半 -->
+    <dimen name="eye_radius_small">20dp</dimen>
+    <dimen name="eye_spacing_large">160dp</dimen>
+    <dimen name="pupil_radius_small">8dp</dimen>
+
+    <!-- ...existing code... -->
+</resources>

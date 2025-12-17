@@ -12,6 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Hei">
         <activity
+            android:name=".SecondSettingsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"

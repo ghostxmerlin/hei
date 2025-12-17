@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 这里只保留一个占位，实际 dimen 和 attrs 使用项目中已有的 dimens.xml 和 attrs.xml 定义 -->
+</resources>

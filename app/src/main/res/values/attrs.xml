@@ -1,0 +1,8 @@
+<resources>
+    <!-- 自定义视图 EyesView 的属性声明 -->
+    <declare-styleable name="EyesView">
+        <attr name="eyeRadius" format="dimension" />
+        <attr name="eyeSpacing" format="dimension" />
+        <attr name="pupilRadius" format="dimension" />
+    </declare-styleable>
+</resources>

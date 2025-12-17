@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ...existing code... -->
+<LinearLayout
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- 眼睛区域 -->
+    <!-- ...existing code... -->
+    <com.example.hei.EyesView
+        android:id="@+id/eyesView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp" />
+    <!-- ...existing code... -->
+
+    <!-- 眼睛和文字垂直距离约 100px，这里近似用 100dp -->
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="100dp" />
+
+    <!-- WAITING FOR INPUT. 宽度约为两眼区域 70%，居中 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="0.15" />
+
+        <TextView
+            android:id="@+id/tvWaiting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:gravity="center"
+            android:text="WAITING FOR INPUT."
+            android:textColor="#B0C4DE"
+            android:textSize="14sp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="0.15" />
+    </LinearLayout>
+
+    <!-- 底部灰色按钮（已缩小） -->
+    <!-- ...existing code... -->
+
+</LinearLayout>
+<!-- ...existing code... -->
+
