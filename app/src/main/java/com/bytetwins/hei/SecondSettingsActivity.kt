@@ -205,38 +205,39 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                         containerColor = buttonBackground,
                         onClick = {
                             val targetPackage = "com.gemwallet.android"
-                            val targetActivity = "com.gemwallet.android.MainActivity"
-                            Log.d("SecondSettings", "Trying to open GemWallet explicitly: $targetPackage/$targetActivity")
+                            val explicitActivity = "com.gemwallet.android.MainActivity"
+                            val pm = context.packageManager
 
-                            val explicitIntent = Intent().apply {
-                                setClassName(targetPackage, targetActivity)
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            // 1) 首选：使用 getLaunchIntentForPackage（方法1），看系统是否还能正常拉起
+                            val launchIntent = pm.getLaunchIntentForPackage(targetPackage)
+                            if (launchIntent != null) {
+                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                try {
+                                    Log.d("SecondSettings", "Opening GemWallet via launchIntent: $targetPackage")
+                                    context.startActivity(launchIntent)
+                                    return@SettingsLargeButton
+                                } catch (e: Exception) {
+                                    Log.e("SecondSettings", "Error opening GemWallet via launch intent, fallback to explicit", e)
+                                }
+                            } else {
+                                Log.w("SecondSettings", "No launchIntent for $targetPackage, fallback to explicit activity")
                             }
 
+                            // 2) 回退：显式 Activity（保持你之前的兼容性）
+                            val explicitIntent = Intent().apply {
+                                setClassName(targetPackage, explicitActivity)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
                             try {
+                                Log.d("SecondSettings", "Opening GemWallet explicitly: $targetPackage/$explicitActivity")
                                 context.startActivity(explicitIntent)
-                                Toast.makeText(context, "Opening GemWallet...", Toast.LENGTH_SHORT).show()
                             } catch (e: android.content.ActivityNotFoundException) {
-                                Log.e("SecondSettings", "Explicit GemWallet activity not found, trying launch intent", e)
-                                // fallback: use launch intent resolved by PackageManager
-                                val pm = context.packageManager
-                                val launchIntent = pm.getLaunchIntentForPackage(targetPackage)
-                                if (launchIntent != null) {
-                                    try {
-                                        context.startActivity(launchIntent)
-                                        Toast.makeText(context, "Opening GemWallet (launcher)...", Toast.LENGTH_SHORT).show()
-                                    } catch (e2: Exception) {
-                                        Log.e("SecondSettings", "Error opening GemWallet via launch intent", e2)
-                                        Toast.makeText(context, "Error opening GemWallet", Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    Log.e("SecondSettings", "No launch intent found for GemWallet")
-                                    Toast.makeText(
-                                        context,
-                                        "Cannot open GemWallet: no launchable activity",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                                Log.e("SecondSettings", "Explicit GemWallet activity not found", e)
+                                Toast.makeText(
+                                    context,
+                                    "Cannot open GemWallet: not installed or no launchable activity",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } catch (e: Exception) {
                                 Log.e("SecondSettings", "Error opening GemWallet explicitly", e)
                                 Toast.makeText(context, "Error opening GemWallet", Toast.LENGTH_SHORT).show()
