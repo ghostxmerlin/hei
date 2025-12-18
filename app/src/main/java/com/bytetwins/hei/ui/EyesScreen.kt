@@ -45,7 +45,7 @@ import com.journeyapps.barcodescanner.BarcodeEncoder
 import kotlin.math.abs
 
 // 眼睛与文字之间的垂直距离（dp）
-private val EyeToTextGapDp = 0.dp
+private val EyeToTextGapDp = 12.dp
 
 @Composable
 fun EyesScreen(
@@ -85,43 +85,63 @@ fun EyesScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 中间区域：眼睛 + 文字（整体垂直居中）
+        // 使用上下权重精细控制：上半部分略大一些，让眼睛位置比刚才稍低一点
         Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth(0.7f),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 放大后的隐藏按钮：高度 72dp，宽度为中间区域的 60%
-            Box(
+            // 上部区域：放隐藏按钮 + 眼睛
+            Column(
                 modifier = Modifier
-                    .height(72.dp)
-                    .fillMaxWidth(0.6f)
-                    .padding(bottom = 8.dp)
-                    .clickable {
-                        idData = IdCardStorage.load(context)
-                        showIdCard = true
-                        showBack = false
-                    }
-            ) { /* hidden ID card trigger */ }
+                    .weight(1.05f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // 眼睛绘制区域
-            EyesCanvas(
-                uiState = uiState,
+                // 隐藏按钮：保持可点击，但高度不要太大，避免拉低眼睛
+                Box(
+                    modifier = Modifier
+                        .height(40.dp)
+                        .fillMaxWidth(0.6f)
+                        .clickable {
+                            idData = IdCardStorage.load(context)
+                            showIdCard = true
+                            showBack = false
+                        }
+                ) { /* hidden ID card trigger */ }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 眼睛绘制区域：固定高度，后面用下半部分的权重让下边缘压在屏幕中线附近
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    EyesCanvas(
+                        uiState = uiState,
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                    )
+                }
+            }
+
+            // 下部区域：文字 + 空白
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp) // 固定一个相对合理的高度，避免眼睛区域过大导致整体下沉
-            )
+                    .weight(0.95f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(modifier = Modifier.height(EyeToTextGapDp))
 
-            Spacer(modifier = Modifier.height(EyeToTextGapDp))
-
-            Text(
-                text = stringResource(id = R.string.main_waiting_for_input),
-                color = Color(0xFFB0C4DE),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 16.sp),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(0.7f)
-            )
+                Text(
+                    text = stringResource(id = R.string.main_waiting_for_input),
+                    color = Color(0xFFB0C4DE),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 16.sp),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(0.7f)
+                )
+            }
         }
 
         // 左上角设置按钮：点击后直接进入 SecondSettingsActivity
