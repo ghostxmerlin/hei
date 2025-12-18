@@ -3,6 +3,8 @@ package com.bytetwins.hei
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -200,7 +202,46 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                                 modifier = Modifier.size(22.dp)
                             )
                         },
-                        containerColor = buttonBackground
+                        containerColor = buttonBackground,
+                        onClick = {
+                            val targetPackage = "com.gemwallet.android"
+                            val targetActivity = "com.gemwallet.android.MainActivity"
+                            Log.d("SecondSettings", "Trying to open GemWallet explicitly: $targetPackage/$targetActivity")
+
+                            val explicitIntent = Intent().apply {
+                                setClassName(targetPackage, targetActivity)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+
+                            try {
+                                context.startActivity(explicitIntent)
+                                Toast.makeText(context, "Opening GemWallet...", Toast.LENGTH_SHORT).show()
+                            } catch (e: android.content.ActivityNotFoundException) {
+                                Log.e("SecondSettings", "Explicit GemWallet activity not found, trying launch intent", e)
+                                // fallback: use launch intent resolved by PackageManager
+                                val pm = context.packageManager
+                                val launchIntent = pm.getLaunchIntentForPackage(targetPackage)
+                                if (launchIntent != null) {
+                                    try {
+                                        context.startActivity(launchIntent)
+                                        Toast.makeText(context, "Opening GemWallet (launcher)...", Toast.LENGTH_SHORT).show()
+                                    } catch (e2: Exception) {
+                                        Log.e("SecondSettings", "Error opening GemWallet via launch intent", e2)
+                                        Toast.makeText(context, "Error opening GemWallet", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Log.e("SecondSettings", "No launch intent found for GemWallet")
+                                    Toast.makeText(
+                                        context,
+                                        "Cannot open GemWallet: no launchable activity",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("SecondSettings", "Error opening GemWallet explicitly", e)
+                                Toast.makeText(context, "Error opening GemWallet", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
                 }
 
@@ -259,10 +300,11 @@ private fun SettingsLargeButton(
     title: String,
     modifier: Modifier = Modifier,
     leadingIcon: (@Composable () -> Unit)? = null,
-    containerColor: Color = Color(0xFF131F32)
+    containerColor: Color = Color(0xFF131F32),
+    onClick: () -> Unit = {}
 ) {
     Button(
-        onClick = { /* TODO: 功能稍后实现 */ },
+        onClick = onClick,
         modifier = modifier
             .height(70.dp),
         colors = ButtonDefaults.buttonColors(
