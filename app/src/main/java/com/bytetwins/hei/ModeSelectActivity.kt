@@ -40,7 +40,8 @@ class ModeSelectActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val initialMode = ModeStorage.loadMode(this)
+        // 从存储读取模式 id 并映射到 HeiMode
+        val initialMode = HeiMode.fromId(ModeStorage.loadModeId(this))
 
         setContent {
             HeiTheme {
@@ -49,7 +50,7 @@ class ModeSelectActivity : ComponentActivity() {
                         initialMode = initialMode,
                         onModeChanged = { mode ->
                             // 每次切换时立即写入文件，供其他应用和 Main 使用
-                            ModeStorage.saveMode(this, mode)
+                            ModeStorage.saveModeId(this, mode.id)
                         },
                         onFinished = { finalMode ->
                             // 返回给 MainActivity 当前模式
