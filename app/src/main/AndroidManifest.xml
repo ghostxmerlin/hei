@@ -12,6 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Hei">
         <activity
+            android:name=".IdSettingsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SecondSettingsActivity"
             android:exported="false" />
 

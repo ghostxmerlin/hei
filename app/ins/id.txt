@@ -1,0 +1,21 @@
+
+下面，我们设置一个工卡功能，它分为设置和展示：
+设置：
+1. 在secondsetting中，点击id config后，出现一个设置界面。 如id_setting.png的样子。
+2. 这个设置界面中，有三个可输入元素，DESIGNATION(NAME), CLASSIFICATION(ROLE)和DATA LINK.
+3. 点击SAVE DATA后，三个信息被记录在本地数据文件。
+展示
+4. 在main中，点击眼睛上面的黑色区域时，出现id_front.png的界面，相当于一个身份卡。
+5. 它使用设置界面中保存的信息， Force那一行是name, devdfsa那一行是ROLE. 头像用一个随机色块。
+6. 当点击身份卡时，它会反转，出现id_back.png的界面。
+7. 身份卡背面显示DATA LINK的信息，以及一个二维码，二维码内容是DATA LINK的信息。
+8. 点击身份卡背面时，身份卡会再次反转，回到正面。 点击身份卡外的黑色屏幕时，返回main.
+9. 身份卡的样式和布局参考id_front.png和id_back.png。
+10. id_back.png中，二维码不要用绿色，用蓝色.
+11. 整个功能块实现时，注意多语言配置。
+
+
+很好，基本上实现了需求，有几点需要更改：
+1.id setting中， save data按钮有一点超出了下边界。
+2.id card，我们需要一个卡片外框。大小，风格参考id_front.png和id_back.png。
+3. 不是点击眼睛出现id card，而是点击一个专门的id card按钮，按钮位置在眼睛的上面，是一个隐藏的按钮。和眼睛差不多大。位于眼睛和屏幕顶部中间位置。

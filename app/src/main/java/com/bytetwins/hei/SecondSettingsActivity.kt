@@ -263,7 +263,10 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                                 modifier = Modifier.size(22.dp)
                             )
                         },
-                        containerColor = buttonBackground
+                        containerColor = buttonBackground,
+                        onClick = {
+                            context.startActivity(Intent(context, IdSettingsActivity::class.java))
+                        }
                     )
                 }
             }

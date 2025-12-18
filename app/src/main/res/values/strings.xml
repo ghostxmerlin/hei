@@ -15,4 +15,15 @@
     <string name="settings_network_4g">Mobile Network Settings</string>
     <string name="settings_digital_wallet">Digital Wallet</string>
     <string name="settings_id_config">ID Config</string>
+
+    <!-- ID Card Settings -->
+    <string name="id_settings_title">ID CONFIG</string>
+    <string name="id_designation_label">DESIGNATION (NAME)</string>
+    <string name="id_classification_label">CLASSIFICATION (ROLE)</string>
+    <string name="id_data_link_label">DATA LINK</string>
+    <string name="id_save_button">SAVE DATA</string>
+    <string name="id_force_label">FORCE</string>
+    <string name="id_role_label">ROLE</string>
+    <string name="id_data_link_title">DATA LINK</string>
+    <string name="id_card_tap_to_flip">Tap to flip</string>
 </resources>
