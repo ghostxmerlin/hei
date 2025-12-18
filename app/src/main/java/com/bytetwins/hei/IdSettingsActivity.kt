@@ -78,12 +78,13 @@ fun IdSettingsScreen(onClose: () -> Unit = {}) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // 外层卡片容器
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(Color(0xFF111C2B), RoundedCornerShape(24.dp))
-                    .padding(20.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // 顶部彩色条
@@ -96,52 +97,60 @@ fun IdSettingsScreen(onClose: () -> Unit = {}) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(id = R.string.id_designation_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = role,
-                    onValueChange = { role = it },
-                    label = { Text(stringResource(id = R.string.id_classification_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = dataLink,
-                    onValueChange = { dataLink = it },
-                    label = { Text(stringResource(id = R.string.id_data_link_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = {
-                        IdCardStorage.save(
-                            context,
-                            IdCardData(name = name, role = role, dataLink = dataLink)
-                        )
-                        onClose()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6366F1)
-                    )
+                // 使用 Column + Spacer(weight) 将输入区域和按钮分隔开，避免按钮被挤出卡片
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = stringResource(id = R.string.id_save_button))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text(stringResource(id = R.string.id_designation_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = role,
+                            onValueChange = { role = it },
+                            label = { Text(stringResource(id = R.string.id_classification_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = dataLink,
+                            onValueChange = { dataLink = it },
+                            label = { Text(stringResource(id = R.string.id_data_link_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button(
+                        onClick = {
+                            IdCardStorage.save(
+                                context,
+                                IdCardData(name = name, role = role, dataLink = dataLink)
+                            )
+                            onClose()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF6366F1)
+                        )
+                    ) {
+                        Text(text = stringResource(id = R.string.id_save_button))
+                    }
                 }
             }
         }

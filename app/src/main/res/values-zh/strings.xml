@@ -15,4 +15,16 @@
     <string name="settings_network_4g">移动网络设置</string>
     <string name="settings_digital_wallet">数字钱包</string>
     <string name="settings_id_config">身份配置</string>
+
+    <!-- ID Card Settings / Display -->
+    <string name="id_settings_title">ID 数据写入</string>
+    <string name="id_designation_label">姓名</string>
+    <string name="id_classification_label">角色</string>
+    <string name="id_data_link_label">数据链接</string>
+    <string name="id_save_button">保存数据</string>
+    <string name="id_force_label">强制</string>
+    <string name="id_role_label">角色</string>
+    <string name="id_data_link_title">联系方式</string>
+    <string name="id_card_tap_to_flip">点击翻转</string>
+    <string name="id_card_title">身份识别</string>
 </resources>

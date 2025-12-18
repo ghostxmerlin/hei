@@ -1,0 +1,2 @@
+ cd /Users/ghostxmerlin/AndroidStudioProjects/hei && ./gradlew :app:assembleDebug
+cd /Users/ghostxmerlin/AndroidStudioProjects/hei && ./gradlew :app:installDebug
