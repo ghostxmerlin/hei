@@ -10,9 +10,6 @@ val leftPupilCenter = leftEyeCenter + pupilOffset + Offset(0f, 5f)
 Offset(dx, dy) 里的 dx 控制左右：正数向右，负数向左。
 dy 控制上下：正数向下，负数向上
 
-// 白眼球中心
-val leftEyeCenter = Offset(x1, y1)
-
 // 根据 uiState 算出来的偏移（跟随头部/鼠标）
 val pupilOffset = Offset(offsetX, offsetY)
 

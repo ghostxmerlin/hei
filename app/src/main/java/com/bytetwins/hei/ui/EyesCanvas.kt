@@ -28,13 +28,13 @@ fun EyesCanvas(
 private fun DrawScope.drawEyes(uiState: EyesUiState) {
     val w = size.width
     val h = size.height
-    val center = Offset(w / 2f, h / 2f)
+    val center = Offset(w / 2f, 50f + h / 2f)
 
     // 基础半径放大 50%（原来 0.09f * 1.5 = 0.135f）
-    val eyeRadius = min(w, h) * 0.11f
+    val eyeRadius = min(w, h) * 0.13f
 
     // 将间距减小到当前的一半：5.2f -> 2.6f
-    val eyeSpacing = eyeRadius * 3.3f
+    val eyeSpacing = eyeRadius * 3.1f
     val leftCenter = center.copy(x = center.x - eyeSpacing / 2f)
     val rightCenter = center.copy(x = center.x + eyeSpacing / 2f)
 
