@@ -166,18 +166,21 @@ fun ModeSelectScreen(
                 horizontalArrangement = Arrangement.spacedBy(32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // 左：对应 create/功能入口，使用刷子图标
+                ModeCircleIcon(
+                    icon = Icons.Filled.Brush,
+                    active = false,
+                    accent = accent
+                )
+                // 中：当前模式/设置，使用齿轮图标，高亮
                 ModeCircleIcon(
                     icon = Icons.Filled.Settings,
                     active = true,
                     accent = accent
                 )
+                // 右：连接/逻辑，使用 Hub 图标
                 ModeCircleIcon(
-                    icon = Icons.Filled.Settings,
-                    active = false,
-                    accent = accent
-                )
-                ModeCircleIcon(
-                    icon = Icons.Filled.Settings,
+                    icon = Icons.Filled.Hub,
                     active = false,
                     accent = accent
                 )
