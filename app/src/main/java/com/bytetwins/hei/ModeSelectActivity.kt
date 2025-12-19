@@ -82,7 +82,7 @@ fun ModeSelectScreen(
     // 1 秒无操作自动退出
     LaunchedEffect(currentMode, lastInteractionTime) {
         val start = lastInteractionTime
-        delay(1000)
+        delay(2000) // 原 1000ms，现在延长为 2000ms（2 秒）
         if (start == lastInteractionTime) {
             onTimeout()
         }
