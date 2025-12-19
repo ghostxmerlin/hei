@@ -4,6 +4,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -67,6 +68,28 @@ private fun isDeviceOwner(context: Context): Boolean {
 
 // 不再在应用内清除 Device Owner，仅退出锁定模式
 // Device Owner 身份一旦通过 adb 授权后，将持续存在，方便在隐藏菜单中反复进入/退出 kiosk 模式
+
+// 动态查找 GemWallet 可启动的 Activity（优先 LAUNCHER，其次任何 exported Activity）
+private fun findGemWalletLaunchActivity(context: Context, packageName: String): ComponentName? {
+    val pm = context.packageManager
+    val mainIntent = Intent(Intent.ACTION_MAIN).apply {
+        addCategory(Intent.CATEGORY_LAUNCHER)
+        setPackage(packageName)
+    }
+    val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+    if (!resolveInfos.isNullOrEmpty()) {
+        val ri = resolveInfos[0]
+        return ComponentName(ri.activityInfo.packageName, ri.activityInfo.name)
+    }
+    return try {
+        val pkgInfo = pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES)
+        val activities = pkgInfo.activities ?: return null
+        val exported = activities.firstOrNull { it.exported }
+        exported?.let { ComponentName(it.packageName, it.name) }
+    } catch (_: Exception) {
+        null
+    }
+}
 
 @Composable
 fun SecondSettingsScreen(onClose: () -> Unit = {}) {
@@ -250,30 +273,42 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                         onClick = {
                             val targetPackage = "com.gemwallet.android"
                             val explicitActivity = "com.gemwallet.android.MainActivity"
-                            val pm = context.packageManager
 
-                            // 1) 首选：使用 getLaunchIntentForPackage（方法1），看系统是否还能正常拉起
-                            val launchIntent = pm.getLaunchIntentForPackage(targetPackage)
-                            if (launchIntent != null) {
-                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            // 1) 先尝试动态解析可启动 Activity
+                            val component = findGemWalletLaunchActivity(context, targetPackage)
+                            if (component != null) {
+                                val intent = Intent(Intent.ACTION_MAIN).apply {
+                                    this.component = component
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
                                 try {
-                                    Log.d("SecondSettings", "Opening GemWallet via launchIntent: $targetPackage")
-                                    context.startActivity(launchIntent)
+                                    Log.d("SecondSettings", "Opening GemWallet via component: $component")
+                                    context.startActivity(intent)
                                     return@SettingsLargeButton
                                 } catch (e: Exception) {
-                                    Log.e("SecondSettings", "Error opening GemWallet via launch intent, fallback to explicit", e)
+                                    Log.e(
+                                        "SecondSettings",
+                                        "Error opening GemWallet via component, fallback to explicit",
+                                        e
+                                    )
                                 }
                             } else {
-                                Log.w("SecondSettings", "No launchIntent for $targetPackage, fallback to explicit activity")
+                                Log.w(
+                                    "SecondSettings",
+                                    "No dynamic launchable activity for $targetPackage, fallback to explicit activity"
+                                )
                             }
 
-                            // 2) 回退：显式 Activity（保持你之前的兼容性）
+                            // 2) 回退：显式启动 MainActivity（保持你之前能工作的行为）
                             val explicitIntent = Intent().apply {
                                 setClassName(targetPackage, explicitActivity)
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             try {
-                                Log.d("SecondSettings", "Opening GemWallet explicitly: $targetPackage/$explicitActivity")
+                                Log.d(
+                                    "SecondSettings",
+                                    "Opening GemWallet explicitly: $targetPackage/$explicitActivity"
+                                )
                                 context.startActivity(explicitIntent)
                             } catch (e: android.content.ActivityNotFoundException) {
                                 Log.e("SecondSettings", "Explicit GemWallet activity not found", e)
@@ -359,8 +394,14 @@ fun SecondSettingsScreen(onClose: () -> Unit = {}) {
                             val pkg = context.packageName
                             if (dpm.isDeviceOwnerApp(pkg)) {
                                 val admin = ComponentName(context, HeiDeviceAdminReceiver::class.java)
-                                // 把应用包加入 lockTask 白名单
-                                dpm.setLockTaskPackages(admin, arrayOf(pkg))
+                                // 把应用自身和 GemWallet 一起加入 lockTask 白名单，允许在锁定状态下打开钱包
+                                dpm.setLockTaskPackages(
+                                    admin,
+                                    arrayOf(
+                                        pkg,
+                                        "com.gemwallet.android"
+                                    )
+                                )
                                 // 通过 MainActivity 启动 lockTask，使应用“占用手机”
                                 MainLockTaskController.startLockTaskIfPossible()
                             } else {
