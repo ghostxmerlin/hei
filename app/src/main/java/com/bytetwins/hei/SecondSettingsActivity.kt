@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bytetwins.hei.ui.FixedResolutionContainer
 import com.bytetwins.hei.ui.theme.HeiTheme
 import java.util.Locale
 
@@ -40,7 +41,13 @@ class SecondSettingsActivity : ComponentActivity() {
         setContent {
             HeiTheme {
                 Surface(color = Color.Black) {
-                    SecondSettingsScreen(onClose = { finish() })
+                    // 让 SecondSettings 界面也放在同一套固定画布中，保持与主界面一致的居中效果
+                    FixedResolutionContainer(
+                        targetWidth = 1080.dp,
+                        targetHeight = 1280.dp
+                    ) {
+                        SecondSettingsScreen(onClose = { finish() })
+                    }
                 }
             }
         }

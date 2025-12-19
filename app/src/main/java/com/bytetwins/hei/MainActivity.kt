@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.bytetwins.hei.mode.HeiMode
 import com.bytetwins.hei.mode.ModeStorage
 import com.bytetwins.hei.ui.EyesScreen
+import com.bytetwins.hei.ui.FixedResolutionContainer
 import com.bytetwins.hei.ui.theme.HeiTheme
 
 class MainActivity : ComponentActivity() {
@@ -48,12 +49,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Black
                 ) {
-                    MainWithBottomBar(
-                        currentMode = currentModeState,
-                        onAnyInteraction = {
-                            // 这里目前不需要额外逻辑，但保留扩展点
-                        }
-                    )
+                    // 在一个固定宽高比的逻辑画布中渲染整个主界面，周围用较亮的灰色填充
+                    FixedResolutionContainer(
+                        targetWidth = 1080.dp,
+                        targetHeight = 1280.dp,
+                        letterboxColor = Color(0xFF20232A)
+                    ) {
+                        // 先直接使用原来的主界面，确保 UI 正常
+                        MainWithBottomBar(
+                            currentMode = currentModeState,
+                            onAnyInteraction = {
+                                // 保留扩展点
+                            }
+                        )
+                    }
                 }
             }
         }
