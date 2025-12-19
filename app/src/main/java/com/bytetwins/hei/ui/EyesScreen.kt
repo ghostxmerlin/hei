@@ -1,6 +1,14 @@
 package com.bytetwins.hei.ui
 
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.BatteryManager
+import android.telephony.TelephonyManager
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -10,11 +18,19 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SignalCellular4Bar
+import androidx.compose.material.icons.filled.SignalCellular0Bar
+import androidx.compose.material.icons.filled.SignalCellularOff
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.BluetoothDisabled
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +65,12 @@ import kotlin.math.abs
 // 眼睛与文字之间的垂直距离（dp）
 private val EyeToTextGapDp = 12.dp
 
+// 简单的配置对象：通过这个开关控制是否显示顶部网络/蓝牙状态图标
+object TopStatusConfig {
+    // 设为 false 则完全关闭顶部状态显示（不读系统状态、不画图标）
+    const val ENABLED: Boolean = true
+}
+
 @Composable
 fun EyesScreen(
     modifier: Modifier = Modifier,
@@ -56,6 +78,63 @@ fun EyesScreen(
     currentMode: HeiMode = HeiMode.LOGIC
 ) {
     val uiState by viewModel.uiState.collectAsState(initial = com.bytetwins.hei.viewmodel.EyesUiState())
+
+    val context = LocalContext.current
+
+    // --- 电量：通过 ACTION_BATTERY_CHANGED 广播读取实际电量 ---
+    var batteryLevelPercent by remember { mutableStateOf(100) }
+    LaunchedEffect(Unit) {
+        // ACTION_BATTERY_CHANGED 是粘性广播，可以用 registerReceiver(null, filter) 直接读取当前值
+        val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        val statusIntent = context.registerReceiver(null, filter)
+        if (statusIntent != null) {
+            val level = statusIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = statusIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            if (level >= 0 && scale > 0) {
+                batteryLevelPercent = ((level * 100f) / scale).toInt().coerceIn(0, 100)
+            }
+        }
+    }
+
+    // 只有在配置开启时才去读取系统网络/蓝牙状态
+    val connectivityManager = remember {
+        if (TopStatusConfig.ENABLED)
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        else null
+    }
+    val telephonyManager = remember {
+        if (TopStatusConfig.ENABLED)
+            context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        else null
+    }
+    val bluetoothAdapter = remember {
+        if (TopStatusConfig.ENABLED) {
+            val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            manager.adapter
+        } else null
+    }
+
+    // 每次重组时直接同步读取当前网络与蓝牙状态（对我们这个简单 UI 足够）
+    val activeNetwork = connectivityManager?.activeNetwork
+    val caps = connectivityManager?.getNetworkCapabilities(activeNetwork)
+
+    val hasWifi = caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+    val hasCellular = caps?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
+    val hasSim = telephonyManager?.simState == TelephonyManager.SIM_STATE_READY
+
+    val isBluetoothConnected = remember(bluetoothAdapter) {
+        try {
+            val btOn = bluetoothAdapter?.isEnabled == true
+            btOn && bluetoothAdapter?.bondedDevices?.isNotEmpty() == true
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
+    val showCellularBars = hasCellular && hasSim
+    val networkTypeLabel = remember(hasCellular, hasWifi) {
+        if (!TopStatusConfig.ENABLED || !hasCellular || hasWifi) "" else "3G"
+    }
 
     // 模式对应的右上角图标和颜色
     val modeIcon = when (currentMode) {
@@ -77,7 +156,6 @@ fun EyesScreen(
         onDispose { viewModel.stopTracking() }
     }
 
-    val context = LocalContext.current
     var showIdCard by remember { mutableStateOf(false) }
     var showBack by remember { mutableStateOf(false) }
     var idData by remember { mutableStateOf(IdCardStorage.load(context)) }
@@ -170,38 +248,161 @@ fun EyesScreen(
             }
         }
 
-        // 左上角设置按钮：点击后直接进入 SecondSettingsActivity
-        IconButton(
-            onClick = {
-                val intent = Intent(context, SecondSettingsActivity::class.java)
-                context.startActivity(intent)
-            },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Settings,
-                contentDescription = "Settings",
-                tint = Color.LightGray
-            )
-        }
+        if (TopStatusConfig.ENABLED) {
+            // 顶部状态行：左侧设置按钮 + 中间状态图标 + 右侧模式按钮
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.TopCenter),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左上角设置按钮
+                IconButton(
+                    onClick = {
+                        val intent = Intent(context, SecondSettingsActivity::class.java)
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = Color.LightGray
+                    )
+                }
 
-        // 右上角模式图标按钮：点击进入模式选择界面
-        IconButton(
-            onClick = {
-                val intent = Intent(context, ModeSelectActivity::class.java)
-                context.startActivity(intent)
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = modeIcon,
-                contentDescription = "Mode",
-                tint = modeTint
-            )
+                // 中间状态图标区域
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 1) Wi‑Fi 优先：连上 Wi‑Fi 时显示亮色 Wi‑Fi 图标
+                    if (hasWifi) {
+                        Icon(
+                            imageVector = Icons.Filled.Wifi,
+                            contentDescription = "Wi‑Fi connected",
+                            tint = Color(0xFF60A5FA),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    } else {
+                        // 2) 未连接 Wi‑Fi：显示蜂窝状态
+                        when {
+                            !hasSim -> {
+                                // 没有 SIM：显示无信号/禁用图标
+                                Icon(
+                                    imageVector = Icons.Filled.SignalCellularOff,
+                                    contentDescription = "No SIM",
+                                    tint = Color(0xFF9CA3AF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            showCellularBars -> {
+                                Icon(
+                                    imageVector = Icons.Filled.SignalCellular4Bar,
+                                    contentDescription = "Cellular connected",
+                                    tint = Color(0xFF9CA3AF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            else -> {
+                                Icon(
+                                    imageVector = Icons.Filled.SignalCellular0Bar,
+                                    contentDescription = "Cellular idle",
+                                    tint = Color(0xFF4B5563),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        if (networkTypeLabel.isNotEmpty()) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = networkTypeLabel,
+                                color = Color(0xFF9CA3AF),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    // 3) 蓝牙图标：连接耳机/设备时高亮，否则灰色
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Icon(
+                        imageVector = if (isBluetoothConnected) Icons.Filled.Bluetooth else Icons.Filled.BluetoothDisabled,
+                        contentDescription = "Bluetooth",
+                        tint = if (isBluetoothConnected) Color(0xFF60A5FA) else Color(0xFF4B5563),
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    // 电池电量图标 + 文本
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Icon(
+                        imageVector = Icons.Filled.BatteryFull,
+                        contentDescription = "Battery",
+                        tint = Color(0xFF9CA3AF),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "$batteryLevelPercent%",
+                        color = Color(0xFF9CA3AF),
+                        fontSize = 11.sp
+                    )
+                }
+
+                // 右上角模式按钮
+                IconButton(
+                    onClick = {
+                        val intent = Intent(context, ModeSelectActivity::class.java)
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Icon(
+                        imageVector = modeIcon,
+                        contentDescription = "Mode",
+                        tint = modeTint
+                    )
+                }
+            }
+        } else {
+            // 配置关闭时，只保留左右两个按钮，水平排列在顶部
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .align(Alignment.TopCenter),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {
+                        val intent = Intent(context, SecondSettingsActivity::class.java)
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = Color.LightGray
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(
+                    onClick = {
+                        val intent = Intent(context, ModeSelectActivity::class.java)
+                        context.startActivity(intent)
+                    }
+                ) {
+                    Icon(
+                        imageVector = modeIcon,
+                        contentDescription = "Mode",
+                        tint = modeTint
+                    )
+                }
+            }
         }
 
         if (showIdCard) {
