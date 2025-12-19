@@ -199,12 +199,13 @@ fun EyesScreen(
         }
 
         // 顶部手势触发区：从屏幕上边缘向下滑时显示状态栏（前提是配置开启），
-        // 每次触发都会把 showStatusBar 设为 true，从而重新开始 2 秒计时
+        // 为了不挡住左上角设置按钮，这里在左侧预留一段不接收手势的区域
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .height(48.dp)
+                .padding(start = 72.dp) // 预留左上角按钮空间，避免拦截其点击
                 .pointerInput(Unit) {
                     detectVerticalDragGestures { _, dragAmount ->
                         if (TopStatusConfig.ENABLED && dragAmount > 10f) {
