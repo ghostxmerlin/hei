@@ -116,11 +116,12 @@ private fun MainWithBottomBar(
         // 原有眼睛主界面
         EyesScreen(currentMode = currentMode)
 
-        // 底部触发区域 + 按钮栏：真正贴在屏幕底部
+        // 底部触发区域 + 按钮栏：整体位置上移 50 像素
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .padding(bottom = 50.dp) // 向上抬高 50 像素
         ) {
             // 触发区：点击或从下向上轻扫都可以唤出底部栏
             Box(
@@ -162,7 +163,7 @@ private fun MainWithBottomBar(
 private fun IconBottomButton(icon: ImageVector, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(64.dp) // 变大一些
+            .size(80.dp) // 原 64.dp，放大约 25~30%
             .clip(CircleShape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
@@ -171,7 +172,7 @@ private fun IconBottomButton(icon: ImageVector, onClick: () -> Unit) {
             imageVector = icon,
             contentDescription = null,
             tint = Color(0xFFB0C4DE),
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(32.dp) // 原 28.dp，略微变大以匹配圆形
         )
     }
 }
