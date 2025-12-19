@@ -29,4 +29,14 @@
     <!-- New: ID card titles -->
     <string name="id_card_title">ID RECOGNITION</string>
     <string name="id_contact_title">CONTACT</string>
+
+    <!-- SecondSettingsActivity titles/buttons -->
+    <string name="settings_close">Close</string>
+    <string name="settings_do_title">Device Owner Mode</string>
+    <string name="settings_do_description">Switch the app in or out of device owner mode.</string>
+    <string name="settings_do_enter">Enter Device Owner</string>
+    <string name="settings_do_exit">Exit Device Owner</string>
+    <string name="settings_do_close">Close</string>
+    <string name="settings_do_enter_toast">Enter Device Owner (not implemented)</string>
+    <string name="settings_do_exit_toast">Exit Device Owner (not implemented)</string>
 </resources>

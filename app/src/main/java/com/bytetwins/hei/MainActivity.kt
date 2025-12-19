@@ -1,5 +1,7 @@
 package com.bytetwins.hei
 
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +44,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 把当前 Activity 引用保存到单例，方便从 SecondSettingsActivity 控制 lockTask
+        MainLockTaskController.bindActivity(this)
+
         // 启用真正的全屏：隐藏状态栏，让内容绘制到系统栏下面
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
@@ -79,6 +84,55 @@ class MainActivity : ComponentActivity() {
         // 回到前台时重新从文件读取模式 id 并映射
         val storedId = ModeStorage.loadModeId(this)
         currentModeState = HeiMode.fromId(storedId)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        MainLockTaskController.unbindActivity(this)
+    }
+}
+
+/**
+ * 控制 MainActivity 进入/退出锁定任务模式的辅助单例。
+ */
+object MainLockTaskController {
+    @Volatile
+    private var activity: MainActivity? = null
+
+    // 对外暴露当前是否处于 lockTask（kiosk）模式的标记
+    @Volatile
+    var isLockTaskActive: Boolean = false
+        private set
+
+    fun bindActivity(activity: MainActivity) {
+        this.activity = activity
+    }
+
+    fun unbindActivity(activity: MainActivity) {
+        if (this.activity === activity) {
+            this.activity = null
+        }
+    }
+
+    fun startLockTaskIfPossible() {
+        val act = activity ?: return
+        try {
+            act.startLockTask()
+            isLockTaskActive = true
+        } catch (_: IllegalStateException) {
+            // 如果当前未被 whitelisted 或者系统不允许，会抛异常，这里忽略
+        }
+    }
+
+    fun stopLockTaskIfRunning() {
+        val act = activity ?: return
+        try {
+            act.stopLockTask()
+        } catch (_: IllegalStateException) {
+            // 未在 lockTask 中时，调用会抛异常，直接忽略
+        } finally {
+            isLockTaskActive = false
+        }
     }
 }
 
