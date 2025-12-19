@@ -30,25 +30,44 @@ private fun DrawScope.drawEyes(uiState: EyesUiState) {
     val h = size.height
     val center = Offset(w / 2f, 50f + h / 2f)
 
-    // 基础半径放大 50%（原来 0.09f * 1.5 = 0.135f）
-    val eyeRadius = min(w, h) * 0.13f
+    // 基础半径：控制整体眼睛大小
+    val baseEyeRadius = min(w, h) * 0.13f
 
-    // 将间距减小到当前的一半：5.2f -> 2.6f
-    val eyeSpacing = eyeRadius * 3.1f
-    val leftCenter = center.copy(x = center.x - eyeSpacing / 2f)
-    val rightCenter = center.copy(x = center.x + eyeSpacing / 2f)
+    // 眼睛间距：系数越大，两只眼距离越远
+    val eyeSpacing = baseEyeRadius * 3.1f
+    val baseLeftCenter = center.copy(x = center.x - eyeSpacing / 2f)
+    val baseRightCenter = center.copy(x = center.x + eyeSpacing / 2f)
 
-    val maxPupilOffset = 0f //eyeRadius * 0.4f
-    val pupilOffset = Offset(
-        x = uiState.pupilOffset.x * maxPupilOffset,
-        y = uiState.pupilOffset.y * maxPupilOffset
-    )
+    // --- 眨眼进度：0 = 正常睁眼，1 = 完全眨眼 ---
+    // 目前 EyesUiState 只有布尔 isBlinking，我们先用一个简单的数值近似：
+    // 眨眼时 blinkProgress = 1f，否则为 0f。后续如果你在 ViewModel 里加上
+    // 连续的 blinkProgress，就可以直接替换这里的实现。
+    val blinkProgress = if (uiState.isBlinking) 1f else 0f
 
-    if (uiState.isBlinking) {
+    // 向左整体平移：30 像素 * blinkProgress，实现从 0 -> 30 的连续过渡
+    val maxBlinkShiftX = -30f
+    val blinkShift = Offset(maxBlinkShiftX * blinkProgress, 0f)
+
+    // 半径缩小 5%：从 1.0 -> 0.95 的线性插值
+    val blinkScale = 1f - 0.05f * blinkProgress
+    val eyeRadius = baseEyeRadius * blinkScale
+
+    val leftCenter = baseLeftCenter + blinkShift
+    val rightCenter = baseRightCenter + blinkShift
+
+    if (blinkProgress >= 1f) {
+        // 完全眨眼：使用细线表示
         val lineHeight = eyeRadius * 0.15f
         drawBlinkEye(leftCenter, eyeRadius, lineHeight)
         drawBlinkEye(rightCenter, eyeRadius, lineHeight)
     } else {
+        // 非完全眨眼：按正常睁眼逻辑绘制（可根据需要在将来加半眨眼形态）
+        val maxPupilOffset = 0f // baseEyeRadius * 0.4f
+        val pupilOffset = Offset(
+            x = uiState.pupilOffset.x * maxPupilOffset,
+            y = uiState.pupilOffset.y * maxPupilOffset
+        )
+
         drawOpenEye(leftCenter, eyeRadius, pupilOffset)
         drawOpenEye(rightCenter, eyeRadius, pupilOffset)
     }
