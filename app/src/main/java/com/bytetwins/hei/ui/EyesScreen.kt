@@ -61,9 +61,13 @@ import com.bytetwins.hei.mode.IdCardStorage
 import com.bytetwins.hei.mode.IdCardData
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import kotlin.math.abs
+import kotlinx.coroutines.delay
 
 // 眼睛与文字之间的垂直距离（dp）
-private val EyeToTextGapDp = 12.dp
+private val EyeToTextGapDp = 32.dp // 原 12.dp，略微加大，让整体重心稍微下移
+
+// 状态栏可见时长（毫秒）：显示 2 秒
+private const val STATUS_BAR_VISIBLE_DURATION_MS = 4000L
 
 // 简单的配置对象：通过这个开关控制是否显示顶部网络/蓝牙状态图标
 object TopStatusConfig {
@@ -160,65 +164,78 @@ fun EyesScreen(
     var showBack by remember { mutableStateOf(false) }
     var idData by remember { mutableStateOf(IdCardStorage.load(context)) }
 
+    // 顶部状态栏显隐：默认隐藏，只有在滑动手势触发后短暂显示
+    var showStatusBar by remember { mutableStateOf(false) }
+
+    // 如果状态栏当前可见，2 秒后自动隐藏；依赖 LaunchedEffect 的取消机制，
+    // 当用户在这 2 秒内再次触发显示时，会重置倒计时而不是叠加多个任务
+    LaunchedEffect(showStatusBar) {
+        if (showStatusBar) {
+            delay(STATUS_BAR_VISIBLE_DURATION_MS)
+            showStatusBar = false
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // 顶部隐藏触发区：从屏幕上方轻扫或点击，直接弹出 ID 卡
+        // 左上角设置按钮：始终可见，不跟随状态栏显隐
+        IconButton(
+            onClick = {
+                val intent = Intent(context, SecondSettingsActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Settings,
+                contentDescription = "Settings",
+                tint = Color.LightGray
+            )
+        }
+
+        // 顶部手势触发区：从屏幕上边缘向下滑时显示状态栏（前提是配置开启），
+        // 每次触发都会把 showStatusBar 设为 true，从而重新开始 2 秒计时
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .height(48.dp)
                 .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onVerticalDrag = { _, dragAmount ->
-                            if (dragAmount > 10f) {
-                                idData = IdCardStorage.load(context)
-                                showIdCard = true
-                                showBack = false
-                            }
+                    detectVerticalDragGestures { _, dragAmount ->
+                        if (TopStatusConfig.ENABLED && dragAmount > 10f) {
+                            showStatusBar = true
                         }
-                    )
+                    }
                 }
-                .clickable {
-                    idData = IdCardStorage.load(context)
-                    showIdCard = true
-                    showBack = false
-                }
-        ) { /* 顶部手势触发区 */ }
+        ) { /* 顶部滑动触发区 */ }
 
         // 使用上下权重精细控制：上半部分略大一些，让眼睛位置比刚才稍低一点
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 上部区域：放隐藏按钮 + 眼睛
+            // 上部区域：眼睛区域改为触发 ID 卡
             Column(
                 modifier = Modifier
-                    .weight(1.05f)
+                    .weight(1.0f) // 原 1.05f，略微减小上半部分权重
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(128.dp)) // 原 12.dp，增加上方留白让眼睛整体下移
 
-                // 隐藏按钮：保持可点击，但高度不要太大，避免拉低眼睛
-                Box(
+                // 眼睛绘制区域：点击时弹出 ID 卡
+                Row(
                     modifier = Modifier
-                        .height(40.dp)
-                        .fillMaxWidth(0.6f)
+                        .fillMaxWidth()
                         .clickable {
                             idData = IdCardStorage.load(context)
                             showIdCard = true
                             showBack = false
-                        }
-                ) { /* hidden ID card trigger */ }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 眼睛绘制区域：固定高度，后面用下半部分的权重让下边缘压在屏幕中线附近
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
+                        },
                     horizontalArrangement = Arrangement.Center
                 ) {
                     EyesCanvas(
@@ -231,7 +248,7 @@ fun EyesScreen(
             // 下部区域：文字 + 空白
             Column(
                 modifier = Modifier
-                    .weight(0.95f)
+                    .weight(1.0f) // 原 0.95f，与上半相等，让眼睛下沿更接近垂直中线
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
@@ -241,15 +258,15 @@ fun EyesScreen(
                 Text(
                     text = stringResource(id = R.string.main_waiting_for_input),
                     color = Color(0xFFB0C4DE),
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 16.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(0.7f)
                 )
             }
         }
 
-        if (TopStatusConfig.ENABLED) {
-            // 顶部状态行：左侧设置按钮 + 中间状态图标 + 右侧模式按钮
+        if (TopStatusConfig.ENABLED && showStatusBar) {
+            // 顶部中间状态图标 + 右侧模式按钮：仅在状态栏显示期间可见
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -257,19 +274,7 @@ fun EyesScreen(
                     .align(Alignment.TopCenter),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左上角设置按钮
-                IconButton(
-                    onClick = {
-                        val intent = Intent(context, SecondSettingsActivity::class.java)
-                        context.startActivity(intent)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Settings",
-                        tint = Color.LightGray
-                    )
-                }
+                Spacer(modifier = Modifier.width(48.dp)) // 占位，避免覆盖左侧固定设置按钮
 
                 // 中间状态图标区域
                 Row(
@@ -353,43 +358,6 @@ fun EyesScreen(
                 }
 
                 // 右上角模式按钮
-                IconButton(
-                    onClick = {
-                        val intent = Intent(context, ModeSelectActivity::class.java)
-                        context.startActivity(intent)
-                    }
-                ) {
-                    Icon(
-                        imageVector = modeIcon,
-                        contentDescription = "Mode",
-                        tint = modeTint
-                    )
-                }
-            }
-        } else {
-            // 配置关闭时，只保留左右两个按钮，水平排列在顶部
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .align(Alignment.TopCenter),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        val intent = Intent(context, SecondSettingsActivity::class.java)
-                        context.startActivity(intent)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "Settings",
-                        tint = Color.LightGray
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
                 IconButton(
                     onClick = {
                         val intent = Intent(context, ModeSelectActivity::class.java)

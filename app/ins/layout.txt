@@ -1,0 +1,23 @@
+1. waiting for input 字号：
+style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+
+2.黑眼珠：
+val pupilRadius = eyeRadius * 0.35f
+想让黑眼珠更大：把系数调大，比如 0.40f、0.45f。
+想让黑眼珠更小：把系数调小，比如 0.30f。
+
+val leftPupilCenter = leftEyeCenter + pupilOffset + Offset(0f, 5f)
+Offset(dx, dy) 里的 dx 控制左右：正数向右，负数向左。
+dy 控制上下：正数向下，负数向上
+
+// 白眼球中心
+val leftEyeCenter = Offset(x1, y1)
+
+// 根据 uiState 算出来的偏移（跟随头部/鼠标）
+val pupilOffset = Offset(offsetX, offsetY)
+
+// 黑眼珠中心
+val leftPupilCenter = leftEyeCenter + pupilOffset
+
+白眼珠： val eyeRadius = min(w, h) * 0.1f
+间距：val eyeSpacing = eyeRadius * 2.6f

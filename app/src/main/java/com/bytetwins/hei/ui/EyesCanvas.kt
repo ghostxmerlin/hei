@@ -31,14 +31,14 @@ private fun DrawScope.drawEyes(uiState: EyesUiState) {
     val center = Offset(w / 2f, h / 2f)
 
     // 基础半径放大 50%（原来 0.09f * 1.5 = 0.135f）
-    val eyeRadius = min(w, h) * 0.135f
+    val eyeRadius = min(w, h) * 0.11f
 
     // 将间距减小到当前的一半：5.2f -> 2.6f
-    val eyeSpacing = eyeRadius * 2.6f
+    val eyeSpacing = eyeRadius * 3.3f
     val leftCenter = center.copy(x = center.x - eyeSpacing / 2f)
     val rightCenter = center.copy(x = center.x + eyeSpacing / 2f)
 
-    val maxPupilOffset = eyeRadius * 0.4f
+    val maxPupilOffset = 0f //eyeRadius * 0.4f
     val pupilOffset = Offset(
         x = uiState.pupilOffset.x * maxPupilOffset,
         y = uiState.pupilOffset.y * maxPupilOffset
@@ -61,7 +61,7 @@ private fun DrawScope.drawOpenEye(center: Offset, radius: Float, pupilOffset: Of
         center = center
     )
 
-    val pupilRadius = radius * 0.52f
+    val pupilRadius = radius * 0.42f
     val pupilCenter = center + pupilOffset
 
     drawCircle(
