@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.bytetwins.hei.mode.HeiMode
 import com.bytetwins.hei.mode.ModeStorage
@@ -36,6 +41,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 启用真正的全屏：隐藏状态栏，让内容绘制到系统栏下面
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+            // 允许用户从顶部短暂滑动呼出系统栏，再自动隐藏
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
         enableEdgeToEdge()
 
         // 从存储读取模式 id，再映射到 HeiMode
@@ -96,31 +111,35 @@ private fun MainWithBottomBar(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable {
-                // 主区域任意点击也算一次交互
-                registerInteraction()
-            }
+            .clickable { registerInteraction() }
     ) {
         // 原有眼睛主界面
         EyesScreen(currentMode = currentMode)
 
-        // 底部触发区域 + 按钮栏
+        // 底部触发区域 + 按钮栏：真正贴在屏幕底部
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 32.dp) // 整体上移一些
         ) {
-            // 可点击区域：点击时弹出底部按钮
+            // 触发区：点击或从下向上轻扫都可以唤出底部栏
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures { _, dragAmount ->
+                            if (dragAmount < -10f) { // 向上拖动
+                                registerInteraction()
+                                barVisible = true
+                            }
+                        }
+                    }
                     .clickable {
                         registerInteraction()
                         barVisible = true
                     }
-            ) { /* 这个区域可以根据需要画个箭头图标等 */ }
+            ) { /* 底部手势触发区 */ }
 
             if (barVisible) {
                 Row(

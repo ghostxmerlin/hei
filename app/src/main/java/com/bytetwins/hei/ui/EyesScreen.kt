@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -85,6 +87,30 @@ fun EyesScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
+        // 顶部隐藏触发区：从屏幕上方轻扫或点击，直接弹出 ID 卡
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(48.dp)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { _, dragAmount ->
+                            if (dragAmount > 10f) {
+                                idData = IdCardStorage.load(context)
+                                showIdCard = true
+                                showBack = false
+                            }
+                        }
+                    )
+                }
+                .clickable {
+                    idData = IdCardStorage.load(context)
+                    showIdCard = true
+                    showBack = false
+                }
+        ) { /* 顶部手势触发区 */ }
+
         // 使用上下权重精细控制：上半部分略大一些，让眼睛位置比刚才稍低一点
         Column(
             modifier = Modifier.fillMaxSize()
